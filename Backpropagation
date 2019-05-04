@@ -1,0 +1,71 @@
+import numpy as np
+from sklearn.metrics import mean_squared_error
+from sklearn.metrics import confusion_matrix
+
+import pandas as pd
+
+class NeuralNet:
+    
+    def __init__(self,x,y,in_nodes,out_nodes,hid_nodes,L_rate):
+        self.input_arr=x
+        self.y=y
+        self.in_nodes=in_nodes
+        self.out_nodes=out_nodes
+        self.hid_nodes=hid_nodes
+        self.L_rate=L_rate
+        self.create_w_matrices()
+     
+    def create_w_matrices(self):
+        self.w_in_hid=np.random.uniform(0,1,(self.input_arr.shape[1],self.hid_nodes))
+        self.w_hid_out=np.random.uniform(0,1,(self.hid_nodes,1))
+     
+    def feedforward(self,X):
+        sigm=lambda i : int(1/(1+np.exp(-i)))
+        sigmoid=np.vectorize(sigm)
+        self.hid_arr = sigmoid(np.dot(X,self.w_in_hid))
+        self.output_arr = sigmoid(np.dot(self.hid_arr,self.w_hid_out))
+        return self.output_arr
+     
+    def backprop(self):
+        sigm_d=lambda i : (np.exp(-i)/(1+np.exp(-i))**2)
+        sigmoid_d=np.vectorize(sigm_d)
+        
+        #dw2 = self.L_rate*np.dot(np.transpose(self.hid_arr),2*(self.y -self.output_arr)*sigmoid_d(self.output_arr))
+        #din1 = self.L_rate*np.dot(np.transpose(self.input_arr), (np.dot(2*(self.y - self.output_arr) *sigmoid_d(self.output_arr), np.transpose(self.w_hid_out) )))
+        dw2=self.L_rate*np.dot(np.transpose(self.hid_arr),(self.y-self.output_arr)*sigmoid_d(self.output_arr))
+        din1=np.dot(np.transpose(self.input_arr),np.dot(self.L_rate*((self.y-self.output_arr)*sigmoid_d(self.output_arr)),np.transpose(self.w_hid_out)))
+        self.w_in_hid =self.w_in_hid + din1
+        self.w_hid_out=self.w_hid_out+ dw2
+        
+    def train(self):
+        print("training...")
+        self.output_arr=self.feedforward(self.input_arr)
+        self.backprop()
+        return self.output_arr
+    
+    def test(self,X,Y):
+        print("testing..")
+        self.output_arr=self.feedforward(X)
+        err=mean_squared_error(Y,self.output_arr)
+        print("The Accuracy is",(1-err)*100,"%")
+        print("Confusion Matrix",confusion_matrix(Y,self.output_arr))
+        
+
+    
+
+
+
+Data=pd.read_csv("C:\\Users\\HP\\Desktop\\SEMVI\\nn\\set10.csv")
+Y=np.ones((Data.shape[0],1),dtype=int)
+
+NN=NeuralNet(Data,Y,Data.shape[0],Y.shape[0],20,0.01)
+for i in range(500):
+    NN.train()
+
+test1=pd.read_csv("C:\\Users\\HP\\Desktop\\SEMVI\\nn\\testsam.csv")
+classify=pd.read_csv("C:\\Users\\HP\\Desktop\\SEMVI\\nn\\classify.csv")
+
+
+
+NN.test(test1,classify)
+
